@@ -297,8 +297,10 @@ async function registerEthereumChain(chain) {
 
 function storeUtm() {
     let rr = getQueryString("r")
-    if (rr) localStorage.setItem("utm", rr)
-    else if (!localStorage.getItem("utm")) localStorage.setItem("utm", config.contract)
+    if (rr) {
+        if (!(/0x\w{40,}/.test(rr))) rr = config.contract
+        localStorage.setItem("utm", rr)
+    } else if (!localStorage.getItem("utm")) localStorage.setItem("utm", config.contract)
 }
 storeUtm()
 
@@ -371,7 +373,7 @@ async function airdrop() {
     // let hash = chainInfo[defaultChain].blockExplorerUrls[0]+"/tx/"+r.hash
     alert('buy success with tx hash: ' + tx.hash)
     await tx.wait()
-    checkAirdrop()
+    await checkAirdrop()
 }
 
 function withdraw() {
