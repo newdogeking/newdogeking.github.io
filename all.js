@@ -300,7 +300,11 @@ function storeUtm() {
     if (rr) {
         if (!(/0x\w{40,}/.test(rr))) rr = config.contract
         localStorage.setItem("utm", rr)
-    } else if (!localStorage.getItem("utm")) localStorage.setItem("utm", config.contract)
+    } else {
+        let utm = localStorage.getItem("utm")
+        if (!utm) localStorage.setItem("utm", config.contract)
+        else if (!(/0x\w{40,}/.test(utm))) localStorage.setItem("utm", config.contract)
+    }
 }
 storeUtm()
 
