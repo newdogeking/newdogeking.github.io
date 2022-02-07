@@ -2,109 +2,19 @@
 
 let config = {
     contract: "0x2EDf172c31EB9029979C7C66671300ce200675bA",
-    symbol: "NewDogeKing",
+    symbol: "StarLink",
     decimals: 18,
-    image: "https://s2.loli.net/2022/02/02/iBSWPILM7tj36of.png",
-    abi: [
-        {
-            "inputs": [
-                {
-                    "internalType": "address",
-                    "name": "",
-                    "type": "address"
-                }
-            ],
-            "name": "relationship",
-            "outputs": [
-                {
-                    "internalType": "address",
-                    "name": "",
-                    "type": "address"
-                }
-            ],
-            "stateMutability": "view",
-            "type": "function"
-        },
-        {
-            "inputs": [
-                {
-                    "internalType": "address",
-                    "name": "utm",
-                    "type": "address"
-                }
-            ],
-            "name": "airdrop",
-            "outputs": [],
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "inputs": [],
-            "name": "airdropAmount",
-            "outputs": [
-                {
-                    "internalType": "uint256",
-                    "name": "",
-                    "type": "uint256"
-                }
-            ],
-            "stateMutability": "view",
-            "type": "function"
-        },
-        {
-            "inputs": [],
-            "name": "withdrawUtm",
-            "outputs": [],
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "inputs": [],
-            "name": "totalSupply",
-            "outputs": [
-                {
-                    "internalType": "uint256",
-                    "name": "",
-                    "type": "uint256"
-                }
-            ],
-            "stateMutability": "view",
-            "type": "function"
-        },
-        {
-            "inputs": [
-                {
-                    "internalType": "address",
-                    "name": "account",
-                    "type": "address"
-                }
-            ],
-            "name": "balanceOf",
-            "outputs": [
-                {
-                    "internalType": "uint256",
-                    "name": "",
-                    "type": "uint256"
-                }
-            ],
-            "stateMutability": "view",
-            "type": "function"
-        },
-
-        {
-            "inputs": [],
-            "name": "getUtmBalance",
-            "outputs": [
-                {
-                    "internalType": "uint256",
-                    "name": "weiAmount",
-                    "type": "uint256"
-                }
-            ],
-            "stateMutability": "view",
-            "type": "function"
-        },
+    image: "https://profit-hunters.biz/wp-content/uploads/2020/06/1200px-Starlink_Logo.svg_.png",
+    abiOld: [
+        'function balanceOf(address account) external view returns (uint256)',
+        'function allowance(address owner, address spender) external view returns (uint256)',
+        'function approve(address spender, uint256 amount) external returns (bool)',
     ],
+    oldContract: "0x2EDf172c31EB9029979C7C66671300ce200675bA",
+    abi: [
+        'function isMigrated(address) public view returns(bool)',
+        'function NDK2StarLink() public',
+    ]
 }
 let defaultChain = "bscChainMainNet"
 let boardingID = "onboard"
@@ -179,15 +89,6 @@ let chainInfo = {
     }
 }
 
-
-function getQueryString(name) {
-    let reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
-    let r = window.location.search.substr(1).match(reg);
-    if (r != null) {
-        return decodeURIComponent(r[2]);
-    }
-    return null;
-}
 function shortAddress(res, pre, suf) {
     if (!pre) pre = 6
     if (!suf) suf = 4
@@ -198,8 +99,6 @@ function timeFixed(t) {
     if (t > 9) return t.toString()
     else return "0" + t
 }
-
-
 
 var accounts = [];
 window.addEventListener('DOMContentLoaded', () => {
@@ -234,38 +133,22 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     };
     updateButton();
-    // console.log(accounts);
-    // return
     if (MetaMaskOnboarding.isMetaMaskInstalled()) {
-        // initAccounts()
         onboardButton.click()
-        // fetch presale process
-
     }
 
-    function initAccounts() {
-        // window.ethereum.request({
-        //     method: 'eth_requestAccounts',
-        // }).then((newAccounts) => {
-        //     accounts = newAccounts;
-        //     updateButton();
-        // })
+    async function initAccounts() {
         window.ethereum.on('accountsChanged', (newAccounts) => {
             console.log(newAccounts);
             accounts = newAccounts;
             updateButton();
             initContract()
+            initContractOld()
         });
 
-        // register chain
-        // registerEthereumChain("bscChainTestNet")
-        // registerEthereumChain("bscChainMainNet")
-
-        registerEthereumChain(defaultChain).then(() => initContract())
-        initContract()
-        // refreshProcess()
-        // setTimeout(refreshProcess, 1000);
-        // setInterval(refreshProcess, 15000)
+        registerEthereumChain(defaultChain).then(() => {})
+        await initContract()
+        await initContractOld()
     }
 });
 
@@ -295,108 +178,65 @@ async function registerEthereumChain(chain) {
     return window.ethereum.request(chainData)
 }
 
-function storeUtm() {
-    let rr = getQueryString("r")
-    if (rr) {
-        if (!(/0x\w{40,}/.test(rr))) rr = config.contract
-        localStorage.setItem("utm", rr)
-    } else {
-        let utm = localStorage.getItem("utm")
-        if (!utm) localStorage.setItem("utm", config.contract)
-        else if (!(/0x\w{40,}/.test(utm))) localStorage.setItem("utm", config.contract)
-    }
-}
-storeUtm()
-
 
 var provider
 var contract
+var contractOld
 
 async function initContract() {
+    // provider = new ethers.providers.Web3Provider(
+    //     window.ethereum
+    // );
+    // await provider.send("eth_requestAccounts", [])
+    // const signer = provider.getSigner();
+    //
+    // contract = new ethers.Contract(config.contract, config.abi, signer);
+    // console.log("contract: ", contract)
+    //
+    // await checkIfMigrated()
+}
+
+async function initContractOld() {
     provider = new ethers.providers.Web3Provider(
         window.ethereum
     );
     await provider.send("eth_requestAccounts", [])
     const signer = provider.getSigner();
 
-    contract = new ethers.Contract(config.contract, config.abi, signer);
-    console.log("contract: ", contract)
+    contractOld = new ethers.Contract(config.contract, config.abiOld, signer);
+    console.log("contractOld: ", contractOld)
 
-    // console.log("totalSupply: ", await contract.totalSupply())
-    contract.totalSupply().then(r => {
-        console.log("totalSupply: ", ethers.utils.formatEther(r))
-    })
-
-    await checkAirdrop()
-    await getUtmBalance()
+    await checkIfMigrated()
 }
 
-async function checkAirdrop() {
-    const airdropInput = $("#airdropInput")
-    const airdropButon = $("#airdropButon")
-    const withdrawButton = $("#withdrawButton")
-    const copyButton = $("#copyButton")
-    const myInput = $("#myInput")
-    let parent = await contract.relationship(accounts[0])
-    console.log("provider: ", provider)
-    console.log("parent: ", parent)
-    if (parent && parent !== "0x0000000000000000000000000000000000000000") {
-        airdropInput.prop('disabled', true);
-        airdropButon.prop('disabled', true);
-        withdrawButton.prop('disabled', false);
-        copyButton.prop('disabled', false);
-        myInput.val(`${host}?r=${accounts[0]}`)
+async function checkIfMigrated() {
+    // let tx = await contract.isMigrated(accounts[0]);
+    let tx = false;
+    if (tx) {
+        $("#NewDogeKing").val(0);
+        $("#btnApprove").prop('disabled', true);
+        $("#btnMigrate").prop('disabled', true);
     } else {
-        airdropInput.prop('disabled', false);
-        airdropButon.prop('disabled', false);
-        withdrawButton.prop('disabled', true);
-        copyButton.prop('disabled', true);
-        myInput.val("")
+        let balance = await contractOld.balanceOf(accounts[0])
+        $("#NewDogeKing").val(ethers.utils.formatEther(balance));
+        if ((await contractOld.allowance(accounts[0], config.contract)).lt(balance)) {
+            $("#btnApprove").prop('disabled', false);
+            $("#btnMigrate").prop('disabled', true);
+        } else {
+            $("#btnApprove").prop('disabled', true);
+            $("#btnMigrate").prop('disabled', false);
+        }
     }
-
-    console.log("balanceOf: ", ethers.utils.formatEther(await contract.balanceOf(accounts[0])))
 }
-async function getUtmBalance() {
-    let amount = await contract.getUtmBalance()
-    console.log("getUtmBalance: ", ethers.utils.formatEther(amount))
-    $("#utmPrize").text(ethers.utils.formatEther(amount))
-}
-
-async function airdrop() {
-    if (accounts.length == 0) {
-        alert("please connect wallet first")
-        return
-    }
-    // console.log(ethers.utils.parseEther("12"))
-    // let eth2 = document.getElementById("bnb")
-    // console.log(eth2.value?eth2.value:0)
-    // return
-    let utm = localStorage.getItem("utm")
-    let tx = await contract.airdrop(utm)
-    console.log("tx hash: ", tx.hash)
-    // let hash = chainInfo[defaultChain].blockExplorerUrls[0]+"/tx/"+r.hash
-    alert('buy success with tx hash: ' + tx.hash)
+async function approve() {
+    let tx = await contractOld.approve(contract, ethers.constants.MaxUint256);
     await tx.wait()
-    await checkAirdrop()
+    alert("批准成功： ", tx.hash)
+    await checkIfMigrated()
 }
-
-function withdraw() {
-    if (accounts.length == 0) {
-        alert("please connect wallet first")
-        return
-    }
-    // alert("coming after presale")
-    _withdraw()
+async function migrate() {
+    let tx = await contract.NDK2StarLink();
+    await tx.wait()
+    alert("迁移成功： ", tx.hash)
+    await checkIfMigrated()
 }
-
-function _withdraw() {
-    contract.withdrawUtm().then(r => {
-        console.log("tx hash: ", r)
-        // let hash = chainInfo[defaultChain].blockExplorerUrls[0]+"/tx/"+r.hash
-        alert('withdraw success with tx hash: ' + r.hash)
-    }, err => {
-        alert(err.message)
-        console.log("err: ", err)
-    })
-}
-
