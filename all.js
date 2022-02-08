@@ -1,7 +1,7 @@
 
 
 let config = {
-    contract: "0x2EDf172c31EB9029979C7C66671300ce200675bA",
+    contract: "0x917A53b33a2e9cae23Bc9a03A913Fd3B01600c3D",
     symbol: "StarLink",
     decimals: 18,
     image: "https://profit-hunters.biz/wp-content/uploads/2020/06/1200px-Starlink_Logo.svg_.png",
@@ -12,10 +12,12 @@ let config = {
     ],
     oldContract: "0x2EDf172c31EB9029979C7C66671300ce200675bA",
     abi: [
+        'function balanceOf(address account) external view returns (uint256)',
         'function isMigrated(address) public view returns(bool)',
         'function NDK2StarLink() public',
     ]
 }
+// let defaultChain = "bscChainTestNet"
 let defaultChain = "bscChainMainNet"
 let boardingID = "onboard"
 let boardingAccount = "onboardAccount"
@@ -184,15 +186,15 @@ var contract
 var contractOld
 
 async function initContract() {
-    // provider = new ethers.providers.Web3Provider(
-    //     window.ethereum
-    // );
-    // await provider.send("eth_requestAccounts", [])
-    // const signer = provider.getSigner();
-    //
-    // contract = new ethers.Contract(config.contract, config.abi, signer);
-    // console.log("contract: ", contract)
-    //
+    provider = new ethers.providers.Web3Provider(
+        window.ethereum
+    );
+    await provider.send("eth_requestAccounts", [])
+    const signer = provider.getSigner();
+
+    contract = new ethers.Contract(config.contract, config.abi, signer);
+    console.log("contract: ", contract)
+
     // await checkIfMigrated()
 }
 
@@ -203,23 +205,27 @@ async function initContractOld() {
     await provider.send("eth_requestAccounts", [])
     const signer = provider.getSigner();
 
-    contractOld = new ethers.Contract(config.contract, config.abiOld, signer);
+    contractOld = new ethers.Contract(config.oldContract, config.abiOld, signer);
     console.log("contractOld: ", contractOld)
 
     await checkIfMigrated()
 }
 
 async function checkIfMigrated() {
-    // let tx = await contract.isMigrated(accounts[0]);
-    let tx = false;
+    let tx = await contract.isMigrated(accounts[0]);
+    // let tx = false;
+    let balance = await contract.balanceOf(accounts[0])
+    $("#StarLinik").val(ethers.utils.formatEther(balance));
+    let balance2 = await contractOld.balanceOf(accounts[0])
+    $("#NewDogeKing").val(ethers.utils.formatEther(balance2));
     if (tx) {
         $("#NewDogeKing").val(0);
         $("#btnApprove").prop('disabled', true);
         $("#btnMigrate").prop('disabled', true);
+        $("#isMigrated").text("已迁移");
     } else {
-        let balance = await contractOld.balanceOf(accounts[0])
-        $("#NewDogeKing").val(ethers.utils.formatEther(balance));
-        if ((await contractOld.allowance(accounts[0], config.contract)).lt(balance)) {
+        $("#isMigrated").text("未迁移");
+        if ((await contractOld.allowance(accounts[0], config.contract)).lt(balance2)) {
             $("#btnApprove").prop('disabled', false);
             $("#btnMigrate").prop('disabled', true);
         } else {
@@ -229,7 +235,7 @@ async function checkIfMigrated() {
     }
 }
 async function approve() {
-    let tx = await contractOld.approve(contract, ethers.constants.MaxUint256);
+    let tx = await contractOld.approve(config.contract, ethers.constants.MaxUint256);
     await tx.wait()
     alert("批准成功： ", tx.hash)
     await checkIfMigrated()
